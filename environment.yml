@@ -1,4 +1,4 @@
-name: neuro_models_env
+name: comp_neuro
 channels:
   - defaults
   - conda-forge
