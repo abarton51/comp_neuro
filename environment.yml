@@ -473,4 +473,3 @@ dependencies:
   - zstd=1.5.5
   - pip:
       - matplotlib==3.9.2
-prefix: C:\Users\Teddy\anaconda3\envs\comp_neuro
