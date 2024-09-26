@@ -263,16 +263,30 @@ class Iz_Simple(ODE_Model):
             input: np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]) \
                 -> np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]:
         return self.a * (self.b * input[0] - input[1])
+    
+    def jacobian(self, V:float) -> np.ndarray:
+        J = [[0.08 * V + 5, -1],
+             [-0.002, -0.02]]
+        return np.asarray(J)
 
     def euler_method_spiking(self, V0: float, n0: float, t0: float, tn: float, dt: float,
-                             Vth: float) \
+                             Vth: float, injected_current_duration=0.0, injected_current=0.0) \
                                 -> np.ndarray[np.ndarray, np.ndarray]:
         t_values = np.arange(t0, tn + dt, dt)
         y_values = np.zeros((2, len(t_values)))
         y_values[0,0] = V0
         y_values[1,0] = n0
 
+        if injected_current_duration > 0:
+            Ix = self.Ix
+            self.set_Ix(injected_current)
+
         for i in range(1, len(t_values)):
+            if (t_values[i] - t0) < injected_current_duration:
+                self.set_Ix(injected_current)
+            else:
+                self.set_Ix(Ix)
+
             # y_{n+1} = y_n + dt * f(t_n, y_n)
             y_values[:,i] = y_values[:,i - 1] + dt * self.ode(y_values[:,i - 1])
             if y_values[0,i] >= Vth:  # Spike condition
