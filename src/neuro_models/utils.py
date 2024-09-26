@@ -19,9 +19,10 @@ Functions:
 import matplotlib.pyplot as plt
 
 def plot_voltage(t_values, V_values, Ix=None, yth=None, yr=None,
-                 color='b', title="Voltage vs Time"):
+                 color='b', title="Voltage vs Time", label_name="Ix", figsize=None):
     """Utility function to plot voltage as a function of time"""
-    plt.plot(t_values, V_values, label=f'Ix = {Ix}', color=color)
+    if figsize: plt.figure(figsize=figsize)
+    plt.plot(t_values, V_values, label=f'{label_name} = {Ix}', color=color)
     plt.xlabel('Time (ms)')
     plt.ylabel('Voltage (mV)')
     plt.title(title)
