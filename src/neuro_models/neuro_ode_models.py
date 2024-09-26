@@ -1,4 +1,10 @@
 """
+Author: Austin Barton
+Collaborators: None
+Credits: **ALL** code was written, developed, and used solely by Austin Barton.
+    A large majority of the documentation was generated using the Chat-GPT4
+    LLM after code was developed to make it easier to come back to and read.
+
 This module defines base classes and models for simulating neural dynamics 
 using Ordinary Differential Equations (ODEs). It includes a generic abstract 
 base class `ODE_Model` for defining ODE systems, along with an implementation 
@@ -207,7 +213,7 @@ class QIF(ODE_Model):
         self.Ix = Ix
 
 class Iz_Simple(ODE_Model):
-    
+
     model_name = "Izhikevich Simple Model"
 
     def __init__(self, param: dict):
@@ -246,21 +252,21 @@ class Iz_Simple(ODE_Model):
             input: np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]) \
                 -> np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]:
         return np.asarray([self.dvdt(input), self.dndt(input)])
-    
+
     def dvdt(self,
             input: np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]) \
                 -> np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]:
                     
         return 0.04 * input[0]**2 + 5 * input[0] - input[1] + 140 + self.Ix
-    
+
     def dndt(self,
             input: np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]) \
                 -> np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]:
         return self.a * (self.b * input[0] - input[1])
-    
+
     def euler_method_spiking(self, V0: float, n0: float, t0: float, tn: float, dt: float,
                              Vth: float) \
-                                 -> np.ndarray[np.ndarray, np.ndarray]:
+                                -> np.ndarray[np.ndarray, np.ndarray]:
         t_values = np.arange(t0, tn + dt, dt)
         y_values = np.zeros((2, len(t_values)))
         y_values[0,0] = V0
@@ -274,12 +280,12 @@ class Iz_Simple(ODE_Model):
                 y_values[1,i] = y_values[1,i-1] + self.d
 
         return t_values, y_values
-    
+
     def set_Vth(self, Vth: float):
         self.Vth = Vth
-        
+
     def set_nth(self, nth: float):
         self.nth = nth
-    
+
     def set_Ix(self, Ix: float):
         self.Ix = Ix
