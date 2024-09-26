@@ -1,7 +1,17 @@
 """
+Author: Austin Barton
+Collaborators: None
+Credits: **ALL** code was written, developed, and used solely by Austin Barton.
+    A large majority of the documentation was generated using the Chat-GPT4
+    LLM after code was developed to make it easier to come back to and read.
+
 This module serves as the initializer for the `neuro_models` package, 
 exposing key classes and functions for simulating and analyzing 
 neuron models.
+
+Package:
+    - `neuro_models`: A package developed for the sole purpose of making my life easier
+    when completing the MATH 4803 - Computational Neuroscience homeworks.
 
 Imports:
     - ODE_Model: Abstract base class for ordinary differential equation (ODE) 

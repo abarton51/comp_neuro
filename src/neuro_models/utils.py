@@ -1,4 +1,10 @@
 """
+Author: Austin Barton
+Collaborators: None
+Credits: **ALL** code was written, developed, and used solely by Austin Barton.
+    A large majority of the documentation was generated using the Chat-GPT4
+    LLM after code was developed to make it easier to come back to and read.
+
 This module contains utility functions for plotting and analyzing voltage as a 
 function of time in computational neuroscience models, such as the Quadratic 
 Integrate-and-Fire (QIF) model.
