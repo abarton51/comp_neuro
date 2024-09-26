@@ -19,7 +19,9 @@ def plot_voltage(t_values, V_values, Ix=None, yth=None, yr=None,
     plt.xlabel('Time (ms)')
     plt.ylabel('Voltage (mV)')
     plt.title(title)
-    plt.axhline(y=yth, color='r', linestyle='--', label='V_th (Threshold)')
-    plt.axhline(y=yr, color='g', linestyle='--', label='V_reset (Reset)')
+    if yth:
+        plt.axhline(y=yth, color='r', linestyle='--', label='V_th (Threshold)')
+    if yr:
+        plt.axhline(y=yr, color='g', linestyle='--', label='V_reset (Reset)')
     plt.legend()
     plt.grid(True)

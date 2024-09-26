@@ -104,7 +104,7 @@ class ODE_Model(ABC):
         return t_values, y_values
 
     def euler_method_spiking(self, y0: float, t0: float, tn: float,
-                             dt: float) -> tuple[np.ndarray, np.ndarray]:
+                             dt: float, yth: float, yr: float) -> tuple[np.ndarray, np.ndarray]:
         """
         Solves the ODE system using the forward Euler method with spiking behavior.
         
@@ -128,8 +128,8 @@ class ODE_Model(ABC):
         for i in range(1, len(t_values)):
             # y_{n+1} = y_n + dt * f(t_n, y_n)
             y_values[i] = y_values[i - 1] + dt * self.ode(y_values[i - 1])
-            if y_values[i] >= self.yth:  # Spike condition
-                y_values[i] = self.yr  # Reset after spike
+            if y_values[i] >= yth:  # Spike condition
+                y_values[i] = yr  # Reset after spike
 
         return t_values, y_values
 
@@ -164,20 +164,18 @@ class QIF(ODE_Model):
                 if value is None:
                     raise ValueError(f"Parameter value for '{key}' cannot be None")
 
-        # Injected current/ Control parameter
+        # Parameters
         self.Ix=param.get('Ix', None)
-
-        # Fixed parameters
         self.taum=param['taum']
         self.c=param['c']
         self.V1=param['V1']
         self.V2=param['V2']
         # Threshold voltage for spiking
-        self.yth=param['Vth']
+        self.Vth=param.get('Vth', None)
         # Reset voltage for spiking
-        self.yr=param['Vr']
+        self.Vr=param.get('Vr', None)
 
-        self.d = self.calculate_discriminant() if self.Ix else None
+        self.discriminant = self.calculate_discriminant() if self.Ix else None
         self.critical_Ix = self.calculate_critical_Ix()
         self.fp = self.calculate_fp() if self.Ix else None
 
@@ -200,10 +198,88 @@ class QIF(ODE_Model):
 
     def quadratic_formula(self) -> tuple[float, float]:
         neg_b = self.V1 + self.V2
-        sqrt_d = np.sqrt(self.d)
+        sqrt_d = np.sqrt(self.discriminant)
         q1 = (neg_b + sqrt_d) / 2
         q2 = (neg_b - sqrt_d) / 2
         return q1, q2
 
+    def set_Ix(self, Ix: float):
+        self.Ix = Ix
+
+class Iz_Simple(ODE_Model):
+    
+    model_name = "Izhikevich Simple Model"
+
+    def __init__(self, param: dict):
+        super().__init__()
+
+        # Ensure 'param' is a dictionary
+        if not isinstance(param, dict):
+            raise TypeError("Expected a dictionary for 'param'")
+
+        # Check for any None values in the dictionary
+        for key, value in param.items():
+            if key != 'Ix':
+                if value is None:
+                    raise ValueError(f"Parameter value for '{key}' cannot be None")
+
+        # Injected current/ Control parameter
+        self.Ix=param.get('Ix', None)
+
+        # Parameters
+        self.a=param['a']
+        self.b=param['b']
+        self.c=param['c']
+        self.d=param['d']
+        # Threshold voltage for spiking
+        self.Vth=param.get('Vth', None)
+        self.nth=param.get('nth', None)
+        # Reset voltage for spiking
+        self.Vr=param.get('Vr', None)
+        self.nr=param.get('nr', None)
+
+        self.discriminant = self.calculate_discriminant() if self.Ix else None
+        self.critical_Ix = self.calculate_critical_Ix() if self.Ix else None
+        self.fp = self.calculate_fp() if self.Ix else None
+
+    def ode(self,
+            input: np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]) \
+                -> np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]:
+        return np.asarray([self.dvdt(input), self.dndt(input)])
+    
+    def dvdt(self,
+            input: np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]) \
+                -> np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]:
+                    
+        return 0.04 * input[0]**2 + 5 * input[0] - input[1] + 140 + self.Ix
+    
+    def dndt(self,
+            input: np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]) \
+                -> np.ndarray[Union[float, np.ndarray], Union[float, np.ndarray]]:
+        return self.a * (self.b * input[0] - input[1])
+    
+    def euler_method_spiking(self, V0: float, n0: float, t0: float, tn: float, dt: float,
+                             Vth: float) \
+                                 -> np.ndarray[np.ndarray, np.ndarray]:
+        t_values = np.arange(t0, tn + dt, dt)
+        y_values = np.zeros((2, len(t_values)))
+        y_values[0,0] = V0
+        y_values[1,0] = n0
+
+        for i in range(1, len(t_values)):
+            # y_{n+1} = y_n + dt * f(t_n, y_n)
+            y_values[:,i] = y_values[:,i - 1] + dt * self.ode(y_values[:,i - 1])
+            if y_values[0,i] >= Vth:  # Spike condition
+                y_values[0,i] = self.c  # Reset after spike
+                y_values[1,i] = y_values[1,i-1] + self.d
+
+        return t_values, y_values
+    
+    def set_Vth(self, Vth: float):
+        self.Vth = Vth
+        
+    def set_nth(self, nth: float):
+        self.nth = nth
+    
     def set_Ix(self, Ix: float):
         self.Ix = Ix
