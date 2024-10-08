@@ -314,12 +314,6 @@ class HH(ODE_Model):
         if not isinstance(param, dict):
             raise TypeError("Expected a dictionary for 'param'")
 
-        for key, value in param.items():
-            if key != 'Ix':
-                if value is None:
-                    raise ValueError(f"Parameter value for '{key}' cannot be None")
-
-        self.Iion=param.get('Iion', None)
         self.Ix=param.get('Ix', None)
         self.Cm=param.get('Cm', None)
         
@@ -330,55 +324,84 @@ class HH(ODE_Model):
         self.EL=param.get('EL', None)
         self.EK=param.get('EK', None)
         self.ENa=param.get('ENa', None)
-        
-        self.IL=param.get('IL', None)
-        self.IK=param.get('IK', None)
-        self.INa=param.get('INa', None)
     
-    def get_Iion(self, V, n, m, h):
-        return -self.gL*(V-self.EL)-self.gK*n**4*(V - self.EK) - self.gNa*m**3*h*(V-self.ENa)
-        
+    def ode(self, input, Ix):
+        V = input[0]
+        n = input[1]
+        m = input[2]
+        h = input[3]
+        return np.asarray([self.dVdt(V, n, m, h, Ix), self.dndt(V, n), self.dmdt(V, m), self.dhdt(V, h)])
+
+    def dVdt(self, V, n, m, h, Ix):
+        return (1 / self.Cm) * (self.Iion(V, n, m, h) + Ix)
+
     def dndt(self, V, n):
-        (1 / self.tau_n(V)) * (self.n_infty(V) - n)
-    
+        return (1 / self.tau_n(V)) * (self.n_infty(V) - n)
+
     def dmdt(self, V, m):
-        (1 / self.tau_m(V)) * (self.m_infty(V) - m)
-    
+        return (1 / self.tau_m(V)) * (self.m_infty(V) - m)
+
     def dhdt(self, V, h):
-        (1 / self.tau_h(V)) * (self.h_infty(V) - h)
+        return (1 / self.tau_h(V)) * (self.h_infty(V) - h)
     
+    def Iion(self, V, n, m, h):
+        return self.IL(V) + self.IK(V, n) + self.INa(V, m, h)
+    
+    def IL(self, V):
+        return -self.gL*(V - self.EL)
+    
+    def IK(self, V, n):
+        return -self.gK*n**4*(V - self.EK)
+    
+    def INa(self, V, m, h):
+        return -self.gNa*m**3*h*(V - self.ENa)
+
     def alpha_n(self, V):
         return (0.01 * (V + 55)) / (1 - np.exp(-0.1 * (V + 55)))
-    
+
     def beta_n(self, V):
         return 0.125 * np.exp(-0.0125 * (V + 65))
-    
+
     def alpha_m(self, V):
         return ( 0.1 * (V + 40)  ) / (1 - np.exp(-0.1 * (V + 40)))
-    
+
     def beta_m(self, V):
         return 4 * np.exp(-0.0556 * (V + 65))
-    
+
     def alpha_h(self, V):
         return 0.07 * np.exp(-0.05 * (V + 65))
-    
+
     def beta_h(self, V):
         return 1 / (1 + np.exp(-0.1 * (V + 35)))
 
     def n_infty(self, V):
         return self.alpha_n(V) / (self.alpha_n(V) + self.beta_n(V))
-    
+
     def m_infty(self, V):
         return self.alpha_m(V) / (self.alpha_m(V) + self.beta_m(V))
-    
+
     def h_infty(self, V):
         return self.alpha_h(V) / (self.alpha_h(V) + self.beta_h(V))
-    
+
     def tau_n(self, V):
-        pass
-    
+        return 1 / (self.alpha_n(V) + self.beta_n(V))
+
     def tau_m(self, V):
-        pass
-    
+        return 1 / (self.alpha_m(V) + self.beta_m(V))
+
     def tau_h(self, V):
-        pass
+        return 1 / (self.alpha_h(V) + self.beta_h(V))
+
+    def euler_method(self, V0: float, n0: float, m0: float, h0: float, t0: float, tn: float, dt: float):
+        t_values = np.arange(t0, tn + dt, dt)
+        y_values = np.zeros((4, len(t_values)))
+        y_values[0,0] = V0
+        y_values[1,0] = n0
+        y_values[2, 0] = m0
+        y_values[3, 0] = h0
+
+        for i in range(1, len(t_values)):
+            # y_{n+1} = y_n + dt * f(t_n, y_n)
+            y_values[:,i] = y_values[:,i - 1] + dt * self.ode(y_values[:,i - 1], self.Ix[i-1])
+
+        return t_values, y_values
