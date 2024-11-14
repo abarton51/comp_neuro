@@ -1,8 +1,58 @@
 import numpy as np
-from typing import Dict
+from typing import Dict, List
 import matplotlib.pyplot as plt
+from skimage.io import imread
+
+def preprocess_image(filename, n):
+    patt2d = imread(filename, as_gray=True)
+    patt2d = np.sign(patt2d / np.max(patt2d) - 0.5)
+    return patt2d[:n, :n].reshape(1, n*n)
+
+class HopfieldNetwork:
+    """Single Hopfield network class for storing and retrieving patterns (Q2)."""
+    def __init__(self, patterns: List[np.ndarray], pattern_names: List[str]):
+        self.pattern_idx_to_name = {idx+1: name for idx, name in enumerate(pattern_names)}
+        self.N = patterns.shape[1]
+        self.M = np.zeros((self.N, self.N))
+        self.k = patterns.shape[0]
+        self._compute_coupling_matrix(patterns)
+    
+    def _compute_coupling_matrix(self, patterns):
+        for mu in range(self.k):
+            self.M += np.outer(patterns[mu], patterns[mu])
+        self.M /= self.N
+        np.fill_diagonal(self.M, 0)
+    
+    def run_network(self, initial_state, max_iterations=1000):
+        current_state = initial_state.copy()
+        states_over_time = [current_state.copy()]
+        for iter in range(max_iterations):
+            i = np.random.randint(0, self.N)
+            current_state[i] = np.sign(np.dot(self.M[i], current_state))
+            if current_state[i] == 0:
+                current_state[i] = 1
+            if (iter + 1) % (self.N) == 0 or (iter + 1) == 10 * self.N:
+                states_over_time.append(current_state.copy())
+        return states_over_time
+
+    def perturb_pattern(self, pattern, p):
+        perturbed = pattern.copy()
+        perturb_mask = np.random.rand(pattern.size) < p
+        perturbed[perturb_mask] *= -1
+        return perturbed
+    
+    def plot_patterns(self, patterns, title):
+        n = int(np.sqrt(patterns.shape[1]))
+        num_patterns = patterns.shape[0]
+        fig, axes = plt.subplots(1, num_patterns, figsize=(12, 3))
+        for i, ax in enumerate(axes):
+            ax.imshow(patterns[i].reshape(n, n), cmap='gray')
+            ax.axis('off')
+        plt.suptitle(title)
+        plt.show()
 
 class Hopfield:
+    """Hopfield network class for simulating multiple networks (Q1)."""
     model_name = 'Hopfield Network'
 
     def __init__(self, param: Dict):
