@@ -54,6 +54,7 @@ class Hopfield:
         return perturbed_pattern
 
     def run_network(self, initial_state, max_iterations=1000):
+        """Async update for the Hopfield network."""
         current_state = initial_state.copy()
         for _ in range(max_iterations):
             i = np.random.randint(0, self.N)
@@ -93,13 +94,13 @@ class HopfieldSimulator:
         for N in self.N_values:
             for k in self.k_values:
                 param = {'N': N, 'k': k, 'iterations': 10 * N}
-                v_diff_over_runs = []
+                v_diff_list = []
                 for _ in range(self.num_networks):
                     network = Hopfield(param)
                     p_values, v_diff = network.simulate(self.p)
-                    v_diff_over_runs.append(v_diff)
+                    v_diff_list.append(v_diff)
 
-                avg_v_diff = np.mean(v_diff_over_runs, axis=0)
+                avg_v_diff = np.mean(v_diff_list, axis=0)
                 results[(N, k)] = (p_values, avg_v_diff)
 
         if show_plot:
