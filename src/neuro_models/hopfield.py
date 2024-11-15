@@ -57,8 +57,8 @@ class Hopfield:
 
     def __init__(self, param: Dict):
         default_keys = ['N', 'k', 'iterations', 'seed']
-        if not all(key in param for key in default_keys):
-            print("Warning: Some default keys are missing, using default values.")
+        #if not all(key in param for key in default_keys):
+        #    print("Warning: Some default keys are missing, using default values.")
         self.N = param.get('N', 16)
         self.k = param.get('k', 3)
         self.iterations = param.get('iterations', 1000)
