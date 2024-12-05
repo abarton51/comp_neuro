@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# example notebooks
+example_notebooks/*
+
 # Distribution / packaging
 .Python
 build/
